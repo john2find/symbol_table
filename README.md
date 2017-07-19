@@ -41,6 +41,25 @@ var doubles = new SymbolTable<double>(values: {
   'hydrogen': 1.0,
   'avogadro': 6.022e23
 });
+
+// Create a new variable within the scope.
+doubles.add('one');
+doubles.add('one', value: 1.0);
+doubles.add('one', value: 1.0, constant: true);
+
+// Set a variable within an ancestor, OR create a new variable if none exists.
+doubles.put('two', value: 2.0);
+
+// Completely remove a variable.
+doubles.remove('two');
+
+// Find a symbol, either in this symbol table or an ancestor.
+var symbol = doubles.resolve('one');
+
+// Find OR create a symbol.
+var symbol = doubles.resolveOrCreate('one');
+var symbol = doubles.resolveOrCreate('one', value: 1.0);
+var symbol = doubles.resolveOrCreate('one', value: 1.0, constant: true);
 ```
 
 # Exporting Symbols

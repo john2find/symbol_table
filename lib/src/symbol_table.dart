@@ -104,6 +104,11 @@ class SymbolTable<T> {
   ///
   /// You may optionally provide a [value], or mark the variable as [constant].
   Variable<T> add(String name, {T value, bool constant}) {
+    // Check if it exists first.
+    if (_variables.any((v) => v.name == name))
+      throw new StateError(
+          'A symbol named "$name" already exists within the current context.');
+
     _wipeLookupCache(name);
     Variable<T> v = constant == true
         ? new Constant(name, value)
