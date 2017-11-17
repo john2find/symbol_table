@@ -24,7 +24,7 @@ foo.lock();
 foo.value = 'baz'; // Also throws a StateError - Once a variable is locked, it cannot be overwritten.
 ```
 
-## Private Variables
+## Visibility
 Variables are *public* by default, but can also be marked as *private* or *protected*. This can be helpful if you are trying
 to determine which symbols should be exported from a library or class.
 
@@ -79,6 +79,11 @@ or classes.
 var exportedSymbols = mySymbolTable.allPublicVariables;
 ```
 
+It's easy to extract symbols of a given visibility:
+```dart
+var exportedSymbols = mySymbolTable.allVariablesWithVisibility(Visibility.protected);
+```
+
 # Child Scopes
 There are three ways to create a new symbol table:
 
@@ -92,6 +97,10 @@ correct scope.
 var child = mySymbolTable.createChild();
 var child = mySymbolTable.createChild(values: {...});
 ```
+
+### Depth
+Every symbol table has an associated `depth` attached to it, with the `depth` at the root
+being `0`. When `createChild` is called, the resulting child has an incremented `depth`.
 
 ## Clones
 This creates a scope at the same level as the current one, with all the same variables.
@@ -114,4 +123,15 @@ has called `remove` on a symbol.
 ```dart
 var forked = mySymbolTable.fork();
 var forked = mySymbolTable.fork(values: {...});
+```
+
+# Creating Names
+In languages with block scope, oftentimes, identifiers will collide within a global scope.
+To avoid this, symbol tables expose a `uniqueName()` method that simply attaches a numerical suffix to
+an input name. The name is guaranteed to never be repeated within a specific scope.
+
+```dart
+var name0 = mySymbolTable.uniqueName('foo'); // foo0
+var name1 = mySymbolTable.uniqueName('foo'); // foo1
+var name2 = mySymbolTable.uniqueName('foo'); // foo2
 ```

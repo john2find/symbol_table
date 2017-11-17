@@ -7,6 +7,7 @@ part 'visibility.dart';
 class SymbolTable<T> {
   final List<SymbolTable<T>> _children = [];
   final Map<String, Variable<T>> _lookupCache = {};
+  final Map<String, int> _names = {};
   final List<Variable<T>> _variables = [];
   int _depth = 0;
   SymbolTable<T> _parent, _root;
@@ -69,9 +70,16 @@ class SymbolTable<T> {
     return new List<Variable<T>>.unmodifiable(out);
   }
 
-  /// Helper for calling [allVariablesOfVisibility] to fetch all public variables.
+  /// Helper for calling [allVariablesWithVisibility] to fetch all public variables.
   List<Variable<T>> get allPublicVariables {
-    return allVariablesOfVisibility(Visibility.public);
+    return allVariablesWithVisibility(Visibility.public);
+  }
+
+
+  /// Use [allVariablesWithVisibility] instead.
+  @deprecated
+  List<Variable<T>> allVariablesOfVisibility(Visibility visibility) {
+    return allVariablesWithVisibility(visibility);
   }
 
   /// Retrieves every variable of the given [visibility] within this scope and its ancestors.
@@ -82,7 +90,7 @@ class SymbolTable<T> {
   /// Use this to "export" symbols out of a library or class.
   ///
   /// This list is unmodifiable.
-  List<Variable<T>> allVariablesOfVisibility(Visibility visibility) {
+  List<Variable<T>> allVariablesWithVisibility(Visibility visibility) {
     List<String> distinct = [];
     List<Variable<T>> out = [];
 
@@ -104,7 +112,7 @@ class SymbolTable<T> {
   Variable<T> operator [](String name) => resolve(name);
 
   void operator []=(String name, T value) {
-    put(name, value);
+    assign(name, value);
   }
 
   void _wipeLookupCache(String key) {
@@ -112,10 +120,16 @@ class SymbolTable<T> {
     _children.forEach((c) => c._wipeLookupCache(key));
   }
 
-  /// Adds a new variable *within this scope*.
+  /// Use [create] instead.
+  @deprecated
+  Variable<T> add(String name, {T value, bool constant}) {
+    return create(name, value: value, constant: constant);
+  }
+
+  /// Create a new variable *within this scope*.
   ///
   /// You may optionally provide a [value], or mark the variable as [constant].
-  Variable<T> add(String name, {T value, bool constant}) {
+  Variable<T> create(String name, {T value, bool constant}) {
     // Check if it exists first.
     if (_variables.any((v) => v.name == name))
       throw new StateError(
@@ -128,12 +142,19 @@ class SymbolTable<T> {
     return v;
   }
 
+
+  /// Use [assign] instead.
+  @deprecated
+  Variable<T> put(String name, T value) {
+    return assign(name, value);
+  }
+
   /// Assigns a [value] to the variable with the given [name], or creates a new variable.
   ///
   /// You cannot use this method to assign constants.
   ///
   /// Returns the variable whose value was just assigned.
-  Variable<T> put(String name, T value) {
+  Variable<T> assign(String name, T value) {
     return resolveOrCreate(name)..value = value;
   }
 
@@ -155,6 +176,8 @@ class SymbolTable<T> {
         search._variables.remove(variable);
         return variable;
       }
+
+      search = search._parent;
     }
 
     return null;
@@ -191,7 +214,7 @@ class SymbolTable<T> {
   Variable<T> resolveOrCreate(String name, {T value, bool constant}) {
     var resolved = resolve(name);
     if (resolved != null) return resolved;
-    return add(name, value: value, constant: constant);
+    return create(name, value: value, constant: constant);
   }
 
   /// Creates a child scope within this one.
@@ -248,5 +271,24 @@ class SymbolTable<T> {
     }));
 
     return table;
+  }
+
+  /// Returns a variation on the input [name] that is guaranteed to never be repeated within this scope.
+  ///
+  /// The variation will the input [name], but with a numerical suffix appended.
+  /// Ex. `foo1`, `bar24`
+  String uniqueName(String name) {
+    int count = 0;
+    SymbolTable search = this;
+
+    while (search != null) {
+      if (search._names.containsKey(name))
+        count += search._names[name];
+      search = search._parent;
+    }
+
+    _names.putIfAbsent(name, () => 0);
+    _names[name]++;
+    return '$name$count';
   }
 }

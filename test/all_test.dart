@@ -13,7 +13,7 @@ main() {
   });
 
   test('add', () {
-    var two = scope.add('two', value: 2);
+    var two = scope.create('two', value: 2);
     expect(two.value, 2);
     expect(two.isImmutable, isFalse);
   });
@@ -21,28 +21,28 @@ main() {
   test('put', () {
     var one = scope.resolve('one');
     var child = scope.createChild();
-    var three = child.put('one', 3);
+    var three = child.assign('one', 3);
     expect(three.value, 3);
     expect(three, one);
   });
 
   test('private', () {
-    var three = scope.add('three', value: 3)..visibility = Visibility.private;
+    var three = scope.create('three', value: 3)..visibility = Visibility.private;
     expect(scope.allVariables, contains(three));
-    expect(scope.allVariablesOfVisibility(Visibility.private), contains(three));
+    expect(scope.allVariablesWithVisibility(Visibility.private), contains(three));
     expect(scope.allPublicVariables, isNot(contains(three)));
   });
 
   test('protected', () {
-    var three = scope.add('three', value: 3)..visibility = Visibility.protected;
+    var three = scope.create('three', value: 3)..visibility = Visibility.protected;
     expect(scope.allVariables, contains(three));
     expect(
-        scope.allVariablesOfVisibility(Visibility.protected), contains(three));
+        scope.allVariablesWithVisibility(Visibility.protected), contains(three));
     expect(scope.allPublicVariables, isNot(contains(three)));
   });
 
   test('constants', () {
-    var two = scope.add('two', value: 2, constant: true);
+    var two = scope.create('two', value: 2, constant: true);
     expect(two.value, 2);
     expect(two.isImmutable, isTrue);
     expect(() => scope['two'] = 3, throwsStateError);
@@ -68,7 +68,7 @@ main() {
 
   test('fork', () {
     var fork = scope.fork();
-    scope.put('three', 3);
+    scope.assign('three', 3);
 
     expect(scope.resolve('three'), isNotNull);
     expect(fork.resolve('three'), isNull);
@@ -95,5 +95,34 @@ main() {
         .createChild();
     expect(child.isRoot, false);
     expect(child.root, scope);
+  });
+
+  test('visibility comparisons', () {
+    expect([Visibility.private, Visibility.protected],
+        everyElement(lessThan(Visibility.public)));
+    expect(Visibility.private, lessThan(Visibility.protected));
+    expect(Visibility.protected, greaterThan(Visibility.private));
+    expect(Visibility.public, greaterThan(Visibility.private));
+    expect(Visibility.public, greaterThan(Visibility.protected));
+  });
+
+  test('depth', () {
+    expect(scope.depth, 0);
+    expect(scope.clone().depth, 0);
+    expect(scope.fork().depth, 0);
+    expect(scope.createChild().depth, 1);
+    expect(scope.createChild().createChild().depth, 2);
+    expect(scope.createChild().createChild().createChild().depth, 3);
+  });
+
+  test('unique name', () {
+    expect(scope.uniqueName('foo'), 'foo0');
+    expect(scope.uniqueName('foo'), 'foo1');
+    expect(scope.createChild().uniqueName('foo'), 'foo2');
+    expect(scope.createChild().uniqueName('foo'), 'foo2');
+    var child = scope.createChild();
+    expect(child.uniqueName('foo'), 'foo2');
+    expect(child.uniqueName('foo'), 'foo3');
+    expect(child.createChild().uniqueName('foo'), 'foo4');
   });
 }
