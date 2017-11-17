@@ -44,12 +44,12 @@ var doubles = new SymbolTable<double>(values: {
 });
 
 // Create a new variable within the scope.
-doubles.add('one');
-doubles.add('one', value: 1.0);
-doubles.add('one', value: 1.0, constant: true);
+doubles.create('one');
+doubles.create('one', value: 1.0);
+doubles.create('one', value: 1.0, constant: true);
 
 // Set a variable within an ancestor, OR create a new variable if none exists.
-doubles.put('two', value: 2.0);
+doubles.assign('two', value: 2.0);
 
 // Completely remove a variable.
 doubles.remove('two');
