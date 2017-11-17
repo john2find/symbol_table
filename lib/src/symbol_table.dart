@@ -1,10 +1,14 @@
-import 'variable.dart';
+library symbol_table;
+
+part 'variable.dart';
+part 'visibility.dart';
 
 /// A hierarchical mechanism to hold a set of variables, which supports scoping and constant variables.
 class SymbolTable<T> {
   final List<SymbolTable<T>> _children = [];
   final Map<String, Variable<T>> _lookupCache = {};
   final List<Variable<T>> _variables = [];
+  int _depth = 0;
   SymbolTable<T> _parent, _root;
 
   /// Initializes an empty symbol table.
@@ -13,10 +17,13 @@ class SymbolTable<T> {
   SymbolTable({Map<String, T> values: const {}}) {
     if (values?.isNotEmpty == true) {
       values.forEach((k, v) {
-        _variables.add(new Variable<T>(k, value: v));
+        _variables.add(new Variable<T>._(k, this, value: v));
       });
     }
   }
+
+  /// The depth of this symbol table within the tree. At the root, this is `0`.
+  int get depth => _depth;
 
   /// Returns `true` if this scope has no parent.
   bool get isRoot => _parent == null;
@@ -62,7 +69,12 @@ class SymbolTable<T> {
     return new List<Variable<T>>.unmodifiable(out);
   }
 
-  /// Retrieves every public variable within this scope and its ancestors.
+  /// Helper for calling [allVariablesOfVisibility] to fetch all public variables.
+  List<Variable<T>> get allPublicVariables {
+    return allVariablesOfVisibility(Visibility.public);
+  }
+
+  /// Retrieves every variable of the given [visibility] within this scope and its ancestors.
   ///
   /// Variable names will not be repeated; this produces the effect of
   /// shadowed variables.
@@ -70,13 +82,13 @@ class SymbolTable<T> {
   /// Use this to "export" symbols out of a library or class.
   ///
   /// This list is unmodifiable.
-  List<Variable<T>> get allPublicVariables {
+  List<Variable<T>> allVariablesOfVisibility(Visibility visibility) {
     List<String> distinct = [];
     List<Variable<T>> out = [];
 
     void crawl(SymbolTable<T> table) {
       for (var v in table._variables) {
-        if (!distinct.contains(v.name) && !v.isPrivate) {
+        if (!distinct.contains(v.name) && v.visibility == visibility) {
           distinct.add(v.name);
           out.add(v);
         }
@@ -110,9 +122,8 @@ class SymbolTable<T> {
           'A symbol named "$name" already exists within the current context.');
 
     _wipeLookupCache(name);
-    Variable<T> v = constant == true
-        ? new Constant(name, value)
-        : new Variable(name, value: value);
+    Variable<T> v = new Variable._(name, this, value: value);
+    if (constant == true) v.lock();
     _variables.add(v);
     return v;
   }
@@ -189,6 +200,7 @@ class SymbolTable<T> {
   SymbolTable<T> createChild({Map<String, T> values: const {}}) {
     var child = new SymbolTable(values: values);
     child
+      .._depth = _depth + 1
       .._parent = this
       .._root = _root;
     _children.add(child);
@@ -202,6 +214,7 @@ class SymbolTable<T> {
     var table = new SymbolTable();
     table._variables.addAll(_variables);
     table
+      .._depth = _depth
       .._parent = _parent
       .._root = _root;
     _parent?._children?.add(table);
@@ -222,18 +235,15 @@ class SymbolTable<T> {
   SymbolTable<T> fork({Map<String, T> values: const {}}) {
     var table = new SymbolTable();
     table
+      .._depth = _depth
       .._parent = _parent
       .._root = _root;
 
     table._variables.addAll(_variables.map((Variable v) {
-      Variable<T> variable;
+      Variable<T> variable = new Variable._(v.name, this, value: v.value);
+      variable.visibility = v.visibility;
 
-      if (v.isImmutable)
-        variable = new Constant(v.name, v.value);
-      else
-        variable = new Variable(v.name, value: v.value);
-
-      if (v.isPrivate) variable.markAsPrivate();
+      if (v.isImmutable) variable.lock();
       return variable;
     }));
 

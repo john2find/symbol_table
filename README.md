@@ -7,13 +7,15 @@ The symbol tables produced by this package are hierarchical (in this case, tree-
 and utilize basic memoization to speed up repeated lookups.
 
 # Variables
-There are two types of symbols: `Variable` and `Constant`. I opted for the name
+To represent a symbol, use `Variable`. I opted for the name
 `Variable` to avoid conflict with the Dart primitive `Symbol`.
 
 ```dart
 var foo = new Variable<String>('foo');
 var bar = new Variable<String>('bar', value: 'baz');
-var shelley = new Constant<String>('foo', 'bar');
+
+// Call `lock` to mark a symbol as immutable.
+var shelley = new Variable<String>('foo', value: 'bar')..lock();
 
 foo.value = 'bar';
 shelley.value = 'Mary'; // Throws a StateError - constants cannot be overwritten.
@@ -23,13 +25,12 @@ foo.value = 'baz'; // Also throws a StateError - Once a variable is locked, it c
 ```
 
 ## Private Variables
-Variables can also be marked as *private*. This can be helpful if you are trying
+Variables are *public* by default, but can also be marked as *private* or *protected*. This can be helpful if you are trying
 to determine which symbols should be exported from a library or class.
 
 ```dart
-myVariable.markAsPrivate();
-
-print(myVariable.isPrivate); // true
+myVariable.visibility = Visibility.protected;
+myVariable.visibility = Visibility.private;
 ```
 
 # Symbol Tables

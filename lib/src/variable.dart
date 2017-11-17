@@ -1,17 +1,22 @@
+part of symbol_table;
+
 /// Holds an immutable symbol, the value of which is set once and only once.
+@deprecated
 class Constant<T> extends Variable<T> {
-  Constant(String name, T value) : super(name, value: value) {
+  Constant(String name, T value) : super._(name, null, value: value) {
     lock();
   }
 }
 
-/// Holds a mutable symbol, the value of which may change.
+/// Holds a symbol, the value of which may change or be marked immutable.
 class Variable<T> {
-  bool _locked = false, _private = false;
-  T _value;
   final String name;
+  final SymbolTable<T> symbolTable;
+  Visibility visibility = Visibility.public;
+  bool _locked = false;
+  T _value;
 
-  Variable(this.name, {T value}) {
+  Variable._(this.name, this.symbolTable, {T value}) {
     _value = value;
   }
 
@@ -21,7 +26,8 @@ class Variable<T> {
   /// This flag has no meaning within the context of this library, but if you
   /// are implementing some sort of interpreter, you may consider acting based on
   /// whether a variable is private.
-  bool get isPrivate => _private;
+  @deprecated
+  bool get isPrivate => visibility == Visibility.private;
 
   T get value => _value;
 
@@ -33,14 +39,13 @@ class Variable<T> {
   }
 
   /// Locks this symbol, and prevents its [value] from being overwritten.
-  ///
-  /// Also see [Constant].
   void lock() {
     _locked = true;
   }
 
   /// Marks this symbol as private.
+  @deprecated
   void markAsPrivate() {
-    _private = true;
+    visibility = Visibility.private;
   }
 }

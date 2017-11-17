@@ -27,9 +27,17 @@ main() {
   });
 
   test('private', () {
-    var three = scope.add('three', value: 3)..markAsPrivate();
-    expect(three.isPrivate, true);
+    var three = scope.add('three', value: 3)..visibility = Visibility.private;
     expect(scope.allVariables, contains(three));
+    expect(scope.allVariablesOfVisibility(Visibility.private), contains(three));
+    expect(scope.allPublicVariables, isNot(contains(three)));
+  });
+
+  test('protected', () {
+    var three = scope.add('three', value: 3)..visibility = Visibility.protected;
+    expect(scope.allVariables, contains(three));
+    expect(
+        scope.allVariablesOfVisibility(Visibility.protected), contains(three));
     expect(scope.allPublicVariables, isNot(contains(three)));
   });
 
