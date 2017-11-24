@@ -1,3 +1,6 @@
+## 1.0.4
+* Added `context` to `SymbolTable`.
+
 ## 1.0.3
 * Converted `Visibility` into a `Comparable` class.
 * Renamed `add` -> `create`,  `put` -> `assign`, and `allVariablesOfVisibility` -> `allVariablesWithVisibility`.

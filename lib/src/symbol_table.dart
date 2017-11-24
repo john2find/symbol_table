@@ -10,6 +10,7 @@ class SymbolTable<T> {
   final Map<String, int> _names = {};
   final List<Variable<T>> _variables = [];
   int _depth = 0;
+  T _context;
   SymbolTable<T> _parent, _root;
 
   /// Initializes an empty symbol table.
@@ -21,6 +22,25 @@ class SymbolTable<T> {
         _variables.add(new Variable<T>._(k, this, value: v));
       });
     }
+  }
+
+  /// Returns the nearest context this symbol table belongs to. Returns `null` if none was set within the entire tree.
+  ///
+  /// This can be used to bind values to a `this` scope within a compiler.
+  T get context {
+    SymbolTable<T> search = this;
+
+    while (search != null) {
+      if (search._context != null) return search._context;
+      search = search._parent;
+    }
+
+    return null;
+  }
+
+  /// Sets a local context for values within this scope to be resolved against.
+  void set context(T value) {
+    _context = value;
   }
 
   /// The depth of this symbol table within the tree. At the root, this is `0`.

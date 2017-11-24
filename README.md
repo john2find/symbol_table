@@ -135,3 +135,24 @@ var name0 = mySymbolTable.uniqueName('foo'); // foo0
 var name1 = mySymbolTable.uniqueName('foo'); // foo1
 var name2 = mySymbolTable.uniqueName('foo'); // foo2
 ```
+
+# `this` Context
+Many languages handle a sort of `this` context that values within a scope may
+optionally be resolved against. Symbol tables can easily set their context
+as follows:
+
+```dart
+void foo() {
+  mySymbolTable.context = thisContext;
+}
+```
+
+Resolution of the `context` getter functions just like a symbol; if none is
+set locally, then it will refer to the parent.
+
+```dart
+void bar() {
+  mySymbolTable.context = thisContext;
+  expect(mySymbolTable.createChild().createChild().context, thisContext);
+}
+```

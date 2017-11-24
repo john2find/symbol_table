@@ -27,17 +27,20 @@ main() {
   });
 
   test('private', () {
-    var three = scope.create('three', value: 3)..visibility = Visibility.private;
+    var three = scope.create('three', value: 3)
+      ..visibility = Visibility.private;
     expect(scope.allVariables, contains(three));
-    expect(scope.allVariablesWithVisibility(Visibility.private), contains(three));
+    expect(
+        scope.allVariablesWithVisibility(Visibility.private), contains(three));
     expect(scope.allPublicVariables, isNot(contains(three)));
   });
 
   test('protected', () {
-    var three = scope.create('three', value: 3)..visibility = Visibility.protected;
+    var three = scope.create('three', value: 3)
+      ..visibility = Visibility.protected;
     expect(scope.allVariables, contains(three));
-    expect(
-        scope.allVariablesWithVisibility(Visibility.protected), contains(three));
+    expect(scope.allVariablesWithVisibility(Visibility.protected),
+        contains(three));
     expect(scope.allPublicVariables, isNot(contains(three)));
   });
 
@@ -124,5 +127,18 @@ main() {
     expect(child.uniqueName('foo'), 'foo2');
     expect(child.uniqueName('foo'), 'foo3');
     expect(child.createChild().uniqueName('foo'), 'foo4');
+  });
+
+  test('context', () {
+    scope.context = 24;
+    expect(scope.context, 24);
+    expect(scope.createChild().context, 24);
+    expect(scope.createChild().createChild().context, 24);
+
+    var child = scope.createChild().createChild()..context = 35;
+    expect(child.context, 35);
+    expect(child.createChild().context, 35);
+    expect(child.createChild().createChild().context, 35);
+    expect(scope.context, 24);
   });
 }
